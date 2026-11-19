@@ -2664,35 +2664,48 @@ def show_overview(apps):
 # 12. MAIN DASHBOARD
 # --------------------------------------------------
 
+# Load the main dataset from the repository by default. The uploader remains
+# available as an override when someone wants to analyse a different CSV.
+DATA_DIR = Path(__file__).parent / "data"
+DEFAULT_APPS_FILE = DATA_DIR / "googleplaystore.csv"
+
 with st.sidebar:
     st.markdown("## PLAYSTORE ANALYTICS")
     st.caption("Business intelligence workspace")
     st.markdown("---")
     apps_file = st.file_uploader(
-        "Upload app dataset",
+        "Upload a different app dataset (optional)",
         type="csv",
-        help="Upload googleplaystore.csv to activate the dashboard."
+        help="The repository dataset loads automatically. Upload another CSV only to replace it for this session."
     )
     reviews_file = st.file_uploader(
         "Optional user reviews CSV",
         type="csv"
     )
 
-if apps_file is None:
+if apps_file is not None:
+    dataset_source = apps_file
+    dataset_label = "Uploaded dataset"
+elif DEFAULT_APPS_FILE.exists():
+    dataset_source = DEFAULT_APPS_FILE
+    dataset_label = "Repository dataset"
+else:
     st.markdown("### Welcome to your analytics workspace")
     st.markdown(
-        '<div class="section-note">Upload <b>googleplaystore.csv</b> from the sidebar to unlock '
-        'the executive overview and all six interactive analysis modules.</div>',
+        '<div class="section-note">The default dataset was not found. Add '
+        '<b>data/googleplaystore.csv</b> to the project, or upload a CSV from the sidebar.</div>',
         unsafe_allow_html=True
     )
-    st.info("Your dataset stays in this Streamlit session and is processed for visualization.")
+    st.info("Once a dataset is available, the executive overview and all six analysis modules will load.")
     st.stop()
 
 try:
-    apps = clean_apps(apps_file)
+    apps = clean_apps(dataset_source)
 except Exception as exc:
     st.error(f"Could not load dataset: {exc}")
     st.stop()
+
+st.sidebar.caption(f"Data source: {dataset_label}")
 
 now = datetime.now(ZoneInfo("Asia/Kolkata"))
 
